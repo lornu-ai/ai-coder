@@ -16,3 +16,10 @@ Cargo.lock
 *.o
 *.so
 *.dylib
+
+# Nix
+result
+result-*
+.envrc
+.dirlocals
+/flake.lock
