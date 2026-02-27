@@ -9,6 +9,7 @@ A blazingly fast CLI tool for AI-assisted coding using local Ollama models on yo
 - 🚀 **Fast Local Inference**: Run large language models directly on your GPU with Ollama
 - 🔐 **Privacy-First**: All processing happens locally—no data sent to external APIs
 - ⚡ **Streaming Output**: Real-time streaming responses as they're generated
+- 🤖 **Agent Mode**: Automatically extract and execute bash commands from LLM output
 - 🔧 **Configurable**: Choose your model and Ollama instance with ease
 - 💰 **Free Forever**: No API costs, subscriptions, or limits
 
@@ -62,6 +63,52 @@ The binary will be available at `./target/release/ai-coder`.
 OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt here"
 ```
 
+### Agent Mode (Execute Bash Commands)
+
+Enable agent mode to automatically extract and execute bash commands from the model's output:
+
+```bash
+# Interactive mode - prompts before executing commands
+./target/release/ai-coder --agent "create a new git repository and add a README"
+
+# Auto-approve mode - executes without confirmation (useful for scripting)
+./target/release/ai-coder --agent --yes "install dependencies with npm"
+```
+
+#### How Agent Mode Works
+
+1. **Generation**: Model generates a response with bash code blocks (triple backticks)
+2. **Extraction**: ai-coder automatically parses and identifies bash/sh code blocks
+3. **Approval**: Shows extracted commands and prompts for confirmation (unless `--yes` is used)
+4. **Execution**: Safely executes approved commands with output capture
+5. **Feedback**: Displays execution status with ✓ (success) or ⚠️ (failure) indicators
+
+#### Example Output
+
+```bash
+$ ./target/release/ai-coder --agent "create a git repo and add a file"
+
+[ai-coder] Mode: AGENT
+[ai-coder] Using model: qwen2.5-coder
+...
+<LLM generates code with bash blocks>
+
+[ai-coder-agent] Found bash command(s):
+============================================================
+mkdir my-project
+cd my-project
+git init
+echo "# My Project" > README.md
+git add .
+git commit -m "Initial commit"
+============================================================
+
+[ai-coder-agent] Execute? (y/n): y
+
+[ai-coder-agent] Executing...
+[ai-coder-agent] ✓ Command succeeded
+```
+
 ### Full Options
 
 ```bash
@@ -93,6 +140,8 @@ OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt h
 
 - `-m, --model <MODEL>`: Model name (default: `qwen2.5-coder`)
 - `-H, --host <HOST>`: Ollama host URL (overrides `OLLAMA_HOST` env var)
+- `-a, --agent`: Enable agent mode - automatically extract and execute bash commands
+- `-y, --yes`: Auto-approve commands in agent mode without confirmation
 
 ## Performance Tips
 
@@ -103,12 +152,12 @@ OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt h
 
 ## Roadmap
 
-- [ ] Agentic loop support (auto-execute generated code)
+- [x] Agent mode support (auto-execute bash commands) - **Completed v0.1.0**
 - [ ] Project file context integration
-- [ ] Bash command execution
 - [ ] Configuration file support
 - [ ] Multi-turn conversation mode
 - [ ] Code formatting and syntax highlighting
+- [ ] Interactive REPL mode for multi-step workflows
 
 ## License
 
