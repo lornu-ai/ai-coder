@@ -7,6 +7,8 @@ use std::env;
 use std::io::{self, Write};
 use std::process::Command;
 
+mod github;
+
 #[derive(Parser, Debug)]
 #[command(
     name = "ai-coder",
@@ -33,6 +35,18 @@ struct Args {
     /// Auto-approve commands without confirmation in agent mode
     #[arg(short = 'y', long)]
     yes: bool,
+
+    /// Enable GitHub integration for PR reviews and file reading
+    #[arg(long)]
+    github: bool,
+
+    /// GitHub token (can also be set via GITHUB_TOKEN env var)
+    #[arg(long)]
+    github_token: Option<String>,
+
+    /// Repository in format owner/repo (auto-detected from git if not provided)
+    #[arg(long)]
+    repo: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -59,6 +73,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("[ai-coder] Mode: {}", mode);
     eprintln!("[ai-coder] Using model: {}", args.model);
     eprintln!("[ai-coder] Connecting to: {}", host);
+
+    // Initialize GitHub client if enabled
+    let _github_client = if args.github {
+        match github::GitHubClient::new(args.github_token.clone()) {
+            Ok(client) => {
+                eprintln!("[ai-coder] GitHub integration: ENABLED");
+                Some(client)
+            }
+            Err(e) => {
+                eprintln!("[ai-coder] GitHub integration failed: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     eprintln!("[ai-coder] ---\n");
 
     let request_body = json!({
