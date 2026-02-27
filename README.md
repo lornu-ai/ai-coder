@@ -1,5 +1,8 @@
 # ai-coder
 
+[![CI](https://github.com/lornu-ai/ai-coder/actions/workflows/ci.yml/badge.svg)](https://github.com/lornu-ai/ai-coder/actions/workflows/ci.yml)
+[![Security](https://github.com/lornu-ai/ai-coder/actions/workflows/security.yml/badge.svg)](https://github.com/lornu-ai/ai-coder/actions/workflows/security.yml)
+
 A blazingly fast CLI tool for AI-assisted coding using local Ollama models on your GPU.
 
 > **New to ai-coder?** 👉 **[Start with the SETUP.md guide](./SETUP.md)** - Complete step-by-step instructions
@@ -217,9 +220,38 @@ cd ~/ai-coder-sandbox
 
 MIT
 
+## CI/CD & Releases
+
+### Automated Testing & Building
+Every push and pull request runs through our automated CI pipeline:
+- ✅ Format checking (`cargo fmt`)
+- ✅ Linting (`cargo clippy`)
+- ✅ Unit tests (`cargo test`)
+- ✅ Release builds on Linux, macOS, Windows
+- ✅ Security audits (dependency vulnerabilities)
+- ✅ Nix reproducible builds
+
+See [.github/WORKFLOWS.md](.github/WORKFLOWS.md) for details.
+
+### Releases
+Binary releases are automatically created when you push a version tag:
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+This triggers builds for all platforms and creates a GitHub release with downloadable binaries.
+
 ## Contributing
 
-Contributions welcome! Please open an issue or PR.
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch from `develop`
+3. Make your changes
+4. Push and open a PR against `develop`
+5. Our CI will automatically test your changes
+
+The CI checks must pass before merging.
 
 ## Support
 
