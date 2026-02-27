@@ -36,13 +36,22 @@ struct Args {
     #[arg(short = 'y', long)]
     yes: bool,
 
-    /// Enable GitHub integration for PR reviews and file reading
+    /// Enable GitHub App integration for PR reviews and file reading
     #[arg(long)]
     github: bool,
 
-    /// GitHub token (can also be set via GITHUB_TOKEN env var)
+    /// GitHub App ID (default: 2665041 for lornu-ai-bot)
+    #[arg(long, default_value = "2665041")]
+    github_app_id: u64,
+
+    /// Path to GitHub App private key PEM file
+    /// (default: /Users/aivcs/engineering/code/creds/lornu-ai-bot.2026-01-15.private-key.pem)
     #[arg(long)]
-    github_token: Option<String>,
+    github_app_key: Option<String>,
+
+    /// GitHub App installation ID (from https://github.com/organizations/lornu-ai/settings/installations)
+    #[arg(long, default_value = "104427264")]
+    github_installation_id: u64,
 
     /// Repository in format owner/repo (auto-detected from git if not provided)
     #[arg(long)]
@@ -76,13 +85,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize GitHub client if enabled
     let _github_client = if args.github {
-        match github::GitHubClient::new(args.github_token.clone()) {
-            Ok(client) => {
-                eprintln!("[ai-coder] GitHub integration: ENABLED");
-                Some(client)
+        let key_path = args.github_app_key.unwrap_or_else(|| {
+            "/Users/aivcs/engineering/code/creds/lornu-ai-bot.2026-01-15.private-key.pem".to_string()
+        });
+
+        match github::GitHubAppAuth::from_private_key_file(args.github_app_id, &key_path) {
+            Ok(app_auth) => {
+                match app_auth.get_installation_token(&client, args.github_installation_id).await {
+                    Ok(token) => {
+                        match github::GitHubClient::new(Some(token)) {
+                            Ok(gh_client) => {
+                                eprintln!("[ai-coder] GitHub integration: ENABLED (GitHub App)");
+                                eprintln!("[ai-coder] App ID: {}", args.github_app_id);
+                                eprintln!("[ai-coder] Installation ID: {}", args.github_installation_id);
+                                Some(gh_client)
+                            }
+                            Err(e) => {
+                                eprintln!("[ai-coder] GitHub client error: {}", e);
+                                None
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[ai-coder] Failed to get installation token: {}", e);
+                        None
+                    }
+                }
             }
             Err(e) => {
-                eprintln!("[ai-coder] GitHub integration failed: {}", e);
+                eprintln!("[ai-coder] GitHub App auth failed: {}", e);
+                eprintln!("[ai-coder] Private key path: {}", key_path);
                 None
             }
         }
