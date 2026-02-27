@@ -2,6 +2,8 @@
 
 A blazingly fast CLI tool for AI-assisted coding using local Ollama models on your GPU.
 
+> **New to ai-coder?** 👉 **[Start with the SETUP.md guide](./SETUP.md)** - Complete step-by-step instructions
+
 ## Features
 
 - 🚀 **Fast Local Inference**: Run large language models directly on your GPU with Ollama
