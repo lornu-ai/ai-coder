@@ -1,6 +1,6 @@
+mod agent;
 mod cli;
 mod ollama;
-mod agent;
 
 use clap::Parser;
 use futures_util::StreamExt;
@@ -9,9 +9,9 @@ use serde_json::json;
 use std::env;
 use std::io::{self, Write};
 
+use crate::agent::extract_and_execute_commands;
 use crate::cli::Args;
 use crate::ollama::OllamaResponse;
-use crate::agent::extract_and_execute_commands;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -40,11 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 3. Send the request to Ollama
-    let response = client
-        .post(&api_url)
-        .json(&request_body)
-        .send()
-        .await?;
+    let response = client.post(&api_url).json(&request_body).send().await?;
 
     let mut stream = response.bytes_stream();
     let mut full_response = String::new();
@@ -68,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 5. If agent mode, extract and execute bash commands
     if args.agent {
-        extract_and_execute_commands(&full_response, args.yes)?;
+        extract_and_execute_commands(&full_response, args.yes, args.allow_unsafe_exec)?;
     }
 
     eprintln!("[ai-coder] Complete");

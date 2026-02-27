@@ -1,8 +1,20 @@
 use std::io::{self, Write};
+use std::mem;
 use std::process::Command;
 
 /// Extract bash code blocks and execute them
-pub fn extract_and_execute_commands(response: &str, auto_approve: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn extract_and_execute_commands(
+    response: &str,
+    auto_approve: bool,
+    allow_unsafe_exec: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if auto_approve && !allow_unsafe_exec {
+        return Err(
+            "Refusing to auto-execute model-generated commands. Re-run with --allow-unsafe-exec to enable --yes."
+                .into(),
+        );
+    }
+
     let commands = extract_commands(response);
 
     for code_block in commands {
@@ -43,31 +55,38 @@ fn extract_commands(response: &str) -> Vec<String> {
                 in_code_block = false;
 
                 // Execute if it's a bash block
-                if language.is_empty() || language.contains("bash") || language.contains("sh") {
-                    commands.push(code_block.clone());
+                let lang_token = language.split_whitespace().next().unwrap_or("");
+                if lang_token.is_empty() || lang_token == "bash" || lang_token == "sh" {
+                    commands.push(mem::take(&mut code_block));
+                } else {
+                    code_block.clear();
                 }
-                code_block.clear();
                 language.clear();
             } else {
                 // Start of code block
                 in_code_block = true;
-                language = line.trim()[3..].to_string(); // Extract language identifier
+                language = line.trim().strip_prefix("```").unwrap_or("").to_string();
             }
         } else if in_code_block {
             code_block.push_str(line);
             code_block.push('\n');
         }
     }
+
+    if in_code_block {
+        let lang_token = language.split_whitespace().next().unwrap_or("");
+        if lang_token.is_empty() || lang_token == "bash" || lang_token == "sh" {
+            commands.push(code_block);
+        }
+    }
+
     commands
 }
 
-/// Execute bash commands safely
+/// Executes a string as a bash script.
 pub fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("\n[ai-coder-agent] Executing...");
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(script)
-        .output()?;
+    let output = Command::new("bash").arg("-c").arg(script).output()?;
 
     // Print output
     if !output.stdout.is_empty() {
@@ -75,11 +94,17 @@ pub fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if !output.stderr.is_empty() {
-        eprintln!("[ai-coder-agent] stderr: {}", String::from_utf8_lossy(&output.stderr));
+        eprintln!(
+            "[ai-coder-agent] stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     if !output.status.success() {
-        eprintln!("[ai-coder-agent] ⚠️  Command failed with status: {}", output.status);
+        eprintln!(
+            "[ai-coder-agent] ⚠️  Command failed with status: {}",
+            output.status
+        );
     } else {
         eprintln!("[ai-coder-agent] ✓ Command succeeded");
     }
@@ -153,5 +178,20 @@ mod tests {
         let commands = extract_commands(response);
         assert_eq!(commands.len(), 1);
         assert_eq!(commands[0], "echo spaced\n");
+    }
+
+    #[test]
+    fn test_extract_commands_unclosed_block() {
+        let response = "Run this:\n```bash\necho no-close";
+        let commands = extract_commands(response);
+        assert_eq!(commands.len(), 1);
+        assert_eq!(commands[0], "echo no-close\n");
+    }
+
+    #[test]
+    fn test_extract_commands_precise_language_match() {
+        let response = "```fish\necho should-not-run\n```";
+        let commands = extract_commands(response);
+        assert_eq!(commands.len(), 0);
     }
 }

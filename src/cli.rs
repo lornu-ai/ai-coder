@@ -26,4 +26,8 @@ pub struct Args {
     /// Auto-approve commands without confirmation in agent mode
     #[arg(short = 'y', long)]
     pub yes: bool,
+
+    /// Explicitly allow unsafe auto-execution of model-generated commands (use with extreme caution)
+    #[arg(long)]
+    pub allow_unsafe_exec: bool,
 }
