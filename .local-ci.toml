@@ -1,0 +1,32 @@
+# stevedores-org/local-ci configuration for ai-coder
+# Run: local-ci              (all stages)
+#       local-ci fmt clippy  (specific stages)
+#       local-ci --fix fmt   (auto-fix formatting)
+
+[cache]
+skip_dirs = [".git", "target", ".claude"]
+include_patterns = ["*.rs", "*.toml"]
+
+[dependencies]
+required = ["cargo", "rustfmt", "clippy"]
+optional = []
+
+[stages.rust-fmt]
+command = ["cargo", "fmt", "--all", "--", "--check"]
+fix_command = ["cargo", "fmt", "--all"]
+timeout = 120
+
+[stages.rust-clippy]
+command = ["cargo", "clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+timeout = 600
+depends_on = []
+
+[stages.rust-test]
+command = ["cargo", "test", "--all-targets"]
+timeout = 600
+depends_on = ["rust-clippy"]
+
+[stages.rust-build]
+command = ["cargo", "build", "--release"]
+timeout = 1800
+depends_on = ["rust-test"]
