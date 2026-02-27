@@ -169,6 +169,12 @@ Once everything is installed:
 # With custom Ollama host
 ./target/release/ai-coder -H http://192.168.1.50:11434 "Your prompt"
 
+# With config file in current directory (.ai-coder.toml)
+./target/release/ai-coder "Your prompt"
+
+# With custom config file path
+./target/release/ai-coder --config ./configs/dev.toml "Your prompt"
+
 # Get help
 ./target/release/ai-coder --help
 ```
@@ -235,6 +241,18 @@ cargo build --release
 ---
 
 ## 🚀 Common Usage Patterns
+
+### Pattern 0: Persistent Defaults via Config File
+```toml
+# .ai-coder.toml
+model = "qwen2.5-coder"
+host = "http://localhost:11434"
+```
+
+Run without passing model/host every time:
+```bash
+ai-coder "Generate a Rust parser for CSV with tests"
+```
 
 ### Pattern 1: Quick Code Generation
 ```bash

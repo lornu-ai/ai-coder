@@ -62,6 +62,27 @@ The binary will be available at `./target/release/ai-coder`.
 OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt here"
 ```
 
+### Config File (`.ai-coder.toml`)
+
+Create a config file in your current directory:
+
+```toml
+model = "deepseek-coder-v2"
+host = "http://localhost:11434"
+```
+
+Then run normally:
+
+```bash
+./target/release/ai-coder "Refactor this Rust module"
+```
+
+Or specify a custom config path:
+
+```bash
+./target/release/ai-coder --config ./configs/dev.toml "Your prompt here"
+```
+
 ### Full Options
 
 ```bash
@@ -85,6 +106,13 @@ OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt h
 
 ## Configuration
 
+Precedence is:
+
+1. Command-line flags
+2. Environment variables (`OLLAMA_HOST`)
+3. Config file (`.ai-coder.toml` or `--config` path)
+4. Built-in defaults
+
 ### Environment Variables
 
 - `OLLAMA_HOST`: Default Ollama instance URL (e.g., `http://localhost:11434`)
@@ -93,6 +121,7 @@ OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt h
 
 - `-m, --model <MODEL>`: Model name (default: `qwen2.5-coder`)
 - `-H, --host <HOST>`: Ollama host URL (overrides `OLLAMA_HOST` env var)
+- `--config <PATH>`: Optional config file path (default lookup: `./.ai-coder.toml`)
 
 ## Performance Tips
 
@@ -106,7 +135,7 @@ OLLAMA_HOST="http://192.168.1.50:11434" ./target/release/ai-coder "Your prompt h
 - [ ] Agentic loop support (auto-execute generated code)
 - [ ] Project file context integration
 - [ ] Bash command execution
-- [ ] Configuration file support
+- [x] Configuration file support
 - [ ] Multi-turn conversation mode
 - [ ] Code formatting and syntax highlighting
 
