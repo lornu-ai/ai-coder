@@ -1,5 +1,6 @@
 mod agent;
 mod cli;
+mod github;
 mod ollama;
 
 use clap::Parser;
