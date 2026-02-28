@@ -9,8 +9,12 @@ pub fn extract_and_execute_commands(
     allow_unsafe_exec: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if auto_approve && !allow_unsafe_exec {
-        eprintln!("\n[ai-coder-agent] ⚠️  WARNING: Auto-approving commands without --allow-unsafe-exec.");
-        eprintln!("[ai-coder-agent] ⚠️  This is risky as model-generated commands could be harmful.");
+        eprintln!(
+            "\n[ai-coder-agent] ⚠️  WARNING: Auto-approving commands without --allow-unsafe-exec."
+        );
+        eprintln!(
+            "[ai-coder-agent] ⚠️  This is risky as model-generated commands could be harmful."
+        );
     }
 
     let commands = extract_commands(response);
