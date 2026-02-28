@@ -1,32 +1,28 @@
-# stevedores-org/local-ci configuration for ai-coder
-# Run: local-ci              (all stages)
-#       local-ci fmt clippy  (specific stages)
-#       local-ci --fix fmt   (auto-fix formatting)
+# AI-Coder Rust Project
+# Local CI configuration for pre-commit validation
 
-[cache]
-skip_dirs = [".git", "target", ".claude"]
-include_patterns = ["*.rs", "*.toml"]
+[project]
+name = "ai-coder"
+kind = "rust"
 
-[dependencies]
-required = ["cargo", "rustfmt", "clippy"]
-optional = []
+[stages]
 
-[stages.rust-fmt]
-command = ["cargo", "fmt", "--all", "--", "--check"]
-fix_command = ["cargo", "fmt", "--all"]
-timeout = 120
+[stages.fmt]
+cmd = ["cargo", "fmt", "--all", "--", "--check"]
+fix_cmd = ["cargo", "fmt", "--all"]
+enabled = true
 
-[stages.rust-clippy]
-command = ["cargo", "clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
-timeout = 600
-depends_on = []
+[stages.check]
+cmd = ["cargo", "check", "--workspace"]
+enabled = true
 
-[stages.rust-test]
-command = ["cargo", "test", "--all-targets"]
-timeout = 600
-depends_on = ["rust-clippy"]
+[stages.clippy]
+cmd = ["cargo", "clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]
+enabled = true
 
-[stages.rust-build]
-command = ["cargo", "build", "--release"]
-timeout = 1800
-depends_on = ["rust-test"]
+[stages.test]
+cmd = ["cargo", "test", "--workspace"]
+enabled = true
+
+[stage_order]
+stages = ["fmt", "check", "clippy", "test"]
