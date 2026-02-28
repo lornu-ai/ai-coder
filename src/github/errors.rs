@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fmt;
 
 pub type Result<T> = std::result::Result<T, GitHubError>;

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::errors::{GitHubError, Result};
 use chrono::Utc;
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -33,13 +35,9 @@ pub struct GitHubAppAuth {
 
 impl GitHubAppAuth {
     /// Create a new GitHub App auth handler from private key file
-    pub fn from_private_key_file<P: AsRef<Path>>(
-        app_id: u64,
-        key_path: P,
-    ) -> Result<Self> {
-        let private_key = fs::read_to_string(key_path).map_err(|e| {
-            GitHubError::InvalidInput(format!("Failed to read private key: {}", e))
-        })?;
+    pub fn from_private_key_file<P: AsRef<Path>>(app_id: u64, key_path: P) -> Result<Self> {
+        let private_key = fs::read_to_string(key_path)
+            .map_err(|e| GitHubError::InvalidInput(format!("Failed to read private key: {}", e)))?;
 
         Ok(Self {
             app_id,
@@ -68,14 +66,14 @@ impl GitHubAppAuth {
         };
 
         let encoding_key = EncodingKey::from_rsa_pem(self.private_key.as_bytes())
-            .map_err(|e| {
-                GitHubError::InvalidInput(format!("Invalid private key: {}", e))
-            })?;
+            .map_err(|e| GitHubError::InvalidInput(format!("Invalid private key: {}", e)))?;
 
-        encode(&Header::new(jsonwebtoken::Algorithm::RS256), &claims, &encoding_key)
-            .map_err(|e| {
-                GitHubError::InvalidInput(format!("Failed to generate JWT: {}", e))
-            })
+        encode(
+            &Header::new(jsonwebtoken::Algorithm::RS256),
+            &claims,
+            &encoding_key,
+        )
+        .map_err(|e| GitHubError::InvalidInput(format!("Failed to generate JWT: {}", e)))
     }
 
     /// Get installation access token for a specific installation
@@ -105,9 +103,7 @@ impl GitHubAppAuth {
                 Ok(token_response.token)
             }
             401 => Err(GitHubError::AuthenticationError),
-            404 => Err(GitHubError::NotFound(
-                "Installation not found".to_string(),
-            )),
+            404 => Err(GitHubError::NotFound("Installation not found".to_string())),
             code => {
                 let message = response
                     .text()

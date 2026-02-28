@@ -86,26 +86,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize GitHub client if enabled
     let _github_client = if args.github {
         let key_path = args.github_app_key.unwrap_or_else(|| {
-            "/Users/aivcs/engineering/code/creds/lornu-ai-bot.2026-01-15.private-key.pem".to_string()
+            "/Users/aivcs/engineering/code/creds/lornu-ai-bot.2026-01-15.private-key.pem"
+                .to_string()
         });
 
         match github::GitHubAppAuth::from_private_key_file(args.github_app_id, &key_path) {
             Ok(app_auth) => {
-                match app_auth.get_installation_token(&client, args.github_installation_id).await {
-                    Ok(token) => {
-                        match github::GitHubClient::new(Some(token)) {
-                            Ok(gh_client) => {
-                                eprintln!("[ai-coder] GitHub integration: ENABLED (GitHub App)");
-                                eprintln!("[ai-coder] App ID: {}", args.github_app_id);
-                                eprintln!("[ai-coder] Installation ID: {}", args.github_installation_id);
-                                Some(gh_client)
-                            }
-                            Err(e) => {
-                                eprintln!("[ai-coder] GitHub client error: {}", e);
-                                None
-                            }
+                match app_auth
+                    .get_installation_token(&client, args.github_installation_id)
+                    .await
+                {
+                    Ok(token) => match github::GitHubClient::new(Some(token)) {
+                        Ok(gh_client) => {
+                            eprintln!("[ai-coder] GitHub integration: ENABLED (GitHub App)");
+                            eprintln!("[ai-coder] App ID: {}", args.github_app_id);
+                            eprintln!(
+                                "[ai-coder] Installation ID: {}",
+                                args.github_installation_id
+                            );
+                            Some(gh_client)
                         }
-                    }
+                        Err(e) => {
+                            eprintln!("[ai-coder] GitHub client error: {}", e);
+                            None
+                        }
+                    },
                     Err(e) => {
                         eprintln!("[ai-coder] Failed to get installation token: {}", e);
                         None
@@ -131,11 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 3. Send the request to Ollama
-    let response = client
-        .post(&api_url)
-        .json(&request_body)
-        .send()
-        .await?;
+    let response = client.post(&api_url).json(&request_body).send().await?;
 
     let mut stream = response.bytes_stream();
     let mut full_response = String::new();
@@ -167,7 +168,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Extract bash code blocks and execute them
-fn extract_and_execute_commands(response: &str, auto_approve: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn extract_and_execute_commands(
+    response: &str,
+    auto_approve: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut in_code_block = false;
     let mut code_block = String::new();
     let mut language = String::new();
@@ -221,10 +225,7 @@ fn extract_and_execute_commands(response: &str, auto_approve: bool) -> Result<()
 /// Execute bash commands safely
 fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("\n[ai-coder-agent] Executing...");
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(script)
-        .output()?;
+    let output = Command::new("bash").arg("-c").arg(script).output()?;
 
     // Print output
     if !output.stdout.is_empty() {
@@ -232,11 +233,17 @@ fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if !output.stderr.is_empty() {
-        eprintln!("[ai-coder-agent] stderr: {}", String::from_utf8_lossy(&output.stderr));
+        eprintln!(
+            "[ai-coder-agent] stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     if !output.status.success() {
-        eprintln!("[ai-coder-agent] ⚠️  Command failed with status: {}", output.status);
+        eprintln!(
+            "[ai-coder-agent] ⚠️  Command failed with status: {}",
+            output.status
+        );
     } else {
         eprintln!("[ai-coder-agent] ✓ Command succeeded");
     }
