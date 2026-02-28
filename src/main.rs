@@ -40,24 +40,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // 3. Send the request to Ollama
-    let response = client.post(&api_url).json(&request_body).send().await?;
+    let response = client
+        .post(&api_url)
+        .json(&request_body)
+        .send()
+        .await?
+        .error_for_status()?;
 
     let mut stream = response.bytes_stream();
     let mut full_response = String::new();
+    let mut buffer = Vec::new();
 
     // 4. Stream the output word-by-word to the terminal
     while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
+        buffer.extend_from_slice(&chunk);
 
-        if let Ok(parsed) = serde_json::from_slice::<OllamaResponse>(&chunk) {
-            print!("{}", parsed.response);
-            full_response.push_str(&parsed.response);
-            io::stdout().flush()?; // Ensure immediate rendering
+        let mut consumed = 0;
+        {
+            let mut deserializer = serde_json::Deserializer::from_slice(&buffer).into_iter::<OllamaResponse>();
 
-            if parsed.done {
-                break;
+            while let Some(result) = deserializer.next() {
+                match result {
+                    Ok(parsed) => {
+                        if let Some(err) = &parsed.error {
+                            return Err(format!("Ollama error: {}", err).into());
+                        }
+
+                        print!("{}", parsed.response);
+                        full_response.push_str(&parsed.response);
+                        io::stdout().flush()?; // Ensure immediate rendering
+
+                        consumed = deserializer.byte_offset();
+                        if parsed.done {
+                            break;
+                        }
+                    }
+                    Err(e) if e.is_eof() => break,
+                    Err(e) => return Err(e.into()),
+                }
             }
         }
+        buffer.drain(..consumed);
     }
 
     println!("\n");
