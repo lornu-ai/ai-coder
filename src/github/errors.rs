@@ -4,6 +4,7 @@ pub type Result<T> = std::result::Result<T, GitHubError>;
 
 /// GitHub API errors
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum GitHubError {
     /// Network request failed
     RequestError(String),

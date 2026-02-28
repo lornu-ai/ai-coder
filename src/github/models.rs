@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// GitHub Pull Request
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct PullRequest {
     pub number: u32,
     pub title: String,
@@ -17,6 +18,7 @@ pub struct PullRequest {
 
 /// Git reference (branch/commit)
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct GitRef {
     pub sha: String,
     #[serde(rename = "ref")]
@@ -26,6 +28,7 @@ pub struct GitRef {
 
 /// Repository information
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct Repository {
     pub name: String,
     pub full_name: String,
@@ -34,6 +37,7 @@ pub struct Repository {
 
 /// GitHub User
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct User {
     pub login: String,
     pub id: u64,
@@ -42,6 +46,7 @@ pub struct User {
 
 /// File content from repository
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct FileContent {
     pub name: String,
     pub path: String,
@@ -54,6 +59,7 @@ pub struct FileContent {
 
 /// Pull Request Review
 #[derive(Debug, Clone, Serialize)]
+#[allow(dead_code)]
 pub struct PullRequestReview {
     pub body: String,
     pub event: ReviewEvent,
@@ -62,6 +68,7 @@ pub struct PullRequestReview {
 /// Review event type
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(dead_code)]
 pub enum ReviewEvent {
     Approve,
     RequestChanges,
@@ -70,6 +77,7 @@ pub enum ReviewEvent {
 
 /// GitHub Issue
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct Issue {
     pub number: u32,
     pub title: String,
@@ -80,6 +88,7 @@ pub struct Issue {
 
 /// Commit information
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct Commit {
     pub sha: String,
     pub message: String,
@@ -89,6 +98,7 @@ pub struct Commit {
 
 /// Commit author
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct CommitAuthor {
     pub name: String,
     pub email: String,

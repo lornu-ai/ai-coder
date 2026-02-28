@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::errors::{GitHubError, Result};
 use super::models::{Commit, FileContent, PullRequest, PullRequestReview};
 use base64::Engine;
