@@ -44,18 +44,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut stream = response.bytes_stream();
     let mut full_response = String::new();
+    let mut buffer = Vec::new();
 
     // 4. Stream the output word-by-word to the terminal
-    while let Some(chunk) = stream.next().await {
+    'outer: while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
+        buffer.extend_from_slice(&chunk);
 
-        if let Ok(parsed) = serde_json::from_slice::<OllamaResponse>(&chunk) {
-            print!("{}", parsed.response);
-            full_response.push_str(&parsed.response);
-            io::stdout().flush()?; // Ensure immediate rendering
+        while let Some(pos) = buffer.iter().position(|&b| b == b'\n') {
+            let line: Vec<u8> = buffer.drain(..=pos).collect();
 
-            if parsed.done {
-                break;
+            if let Ok(parsed) = serde_json::from_slice::<OllamaResponse>(&line) {
+                print!("{}", parsed.response);
+                full_response.push_str(&parsed.response);
+                io::stdout().flush()?; // Ensure immediate rendering
+
+                if parsed.done {
+                    break 'outer;
+                }
             }
         }
     }
