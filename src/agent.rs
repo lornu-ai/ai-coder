@@ -9,10 +9,8 @@ pub fn extract_and_execute_commands(
     allow_unsafe_exec: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if auto_approve && !allow_unsafe_exec {
-        return Err(
-            "Refusing to auto-execute model-generated commands. Re-run with --allow-unsafe-exec to enable --yes."
-                .into(),
-        );
+        eprintln!("\n[ai-coder-agent] ⚠️  WARNING: Auto-approving commands without --allow-unsafe-exec.");
+        eprintln!("[ai-coder-agent] ⚠️  This is risky as model-generated commands could be harmful.");
     }
 
     let commands = extract_commands(response);
@@ -86,24 +84,12 @@ fn extract_commands(response: &str) -> Vec<String> {
 /// Executes a string as a bash script.
 pub fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("\n[ai-coder-agent] Executing...");
-    let output = Command::new("bash").arg("-c").arg(script).output()?;
+    let status = Command::new("bash").arg("-c").arg(script).status()?;
 
-    // Print output
-    if !output.stdout.is_empty() {
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-    }
-
-    if !output.stderr.is_empty() {
-        eprintln!(
-            "[ai-coder-agent] stderr: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
-    if !output.status.success() {
+    if !status.success() {
         eprintln!(
             "[ai-coder-agent] ⚠️  Command failed with status: {}",
-            output.status
+            status
         );
     } else {
         eprintln!("[ai-coder-agent] ✓ Command succeeded");
