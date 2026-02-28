@@ -15,9 +15,9 @@ pub struct GitHubClient {
 impl GitHubClient {
     /// Create a new GitHub client
     pub fn new(token: Option<String>) -> Result<Self> {
-        let token = token.or_else(|| env::var("GITHUB_TOKEN").ok()).ok_or(
-            GitHubError::AuthenticationError,
-        )?;
+        let token = token
+            .or_else(|| env::var("GITHUB_TOKEN").ok())
+            .ok_or(GitHubError::AuthenticationError)?;
 
         Ok(Self {
             http_client: Client::new(),
@@ -90,9 +90,15 @@ impl GitHubClient {
 
     /// Get a repository's README
     pub async fn get_readme(&self, owner: &str, repo: &str) -> Result<String> {
-        match self.get_file_content(owner, repo, "README.md", "main").await {
+        match self
+            .get_file_content(owner, repo, "README.md", "main")
+            .await
+        {
             Ok(content) => Ok(content),
-            Err(_) => self.get_file_content(owner, repo, "README.md", "master").await,
+            Err(_) => {
+                self.get_file_content(owner, repo, "README.md", "master")
+                    .await
+            }
         }
     }
 
