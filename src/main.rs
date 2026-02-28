@@ -130,12 +130,63 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn detect_pr_number(prompt: &str) -> Option<u32> {
-    for word in prompt.split_whitespace() {
-        if let Some(number_str) = word.strip_prefix('#') {
-            if let Ok(number) = number_str.parse::<u32>() {
-                return Some(number);
+    let mut current_number = String::new();
+    let mut in_number = false;
+
+    for c in prompt.chars() {
+        if in_number {
+            if c.is_ascii_digit() {
+                current_number.push(c);
+            } else {
+                if !current_number.is_empty() {
+                    if let Ok(number) = current_number.parse::<u32>() {
+                        return Some(number);
+                    }
+                }
+                current_number.clear();
+                in_number = false;
             }
+        } else if c == '#' {
+            in_number = true;
         }
     }
+
+    if in_number && !current_number.is_empty() {
+        if let Ok(number) = current_number.parse::<u32>() {
+            return Some(number);
+        }
+    }
+
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_pr_number_basic() {
+        assert_eq!(detect_pr_number("Review #123"), Some(123));
+        assert_eq!(detect_pr_number("Fix #456 and more"), Some(456));
+    }
+
+    #[test]
+    fn test_detect_pr_number_with_punctuation() {
+        assert_eq!(detect_pr_number("Review #123."), Some(123));
+        assert_eq!(detect_pr_number("Fix #456!"), Some(456));
+        assert_eq!(detect_pr_number("PR (#789) is ready"), Some(789));
+        assert_eq!(detect_pr_number("Check #123, please"), Some(123));
+    }
+
+    #[test]
+    fn test_detect_pr_number_no_space() {
+        assert_eq!(detect_pr_number("PR#123"), Some(123));
+        assert_eq!(detect_pr_number("See PR#456 for details"), Some(456));
+    }
+
+    #[test]
+    fn test_detect_pr_number_none() {
+        assert_eq!(detect_pr_number("No number here"), None);
+        assert_eq!(detect_pr_number("Only a # hash"), None);
+    }
 }
