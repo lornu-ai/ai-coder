@@ -58,7 +58,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut consumed = 0;
         {
-            let mut deserializer = serde_json::Deserializer::from_slice(&buffer).into_iter::<OllamaResponse>();
+            let mut deserializer =
+                serde_json::Deserializer::from_slice(&buffer).into_iter::<OllamaResponse>();
 
             while let Some(result) = deserializer.next() {
                 match result {
