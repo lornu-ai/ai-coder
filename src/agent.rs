@@ -86,24 +86,12 @@ fn extract_commands(response: &str) -> Vec<String> {
 /// Executes a string as a bash script.
 pub fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("\n[ai-coder-agent] Executing...");
-    let output = Command::new("bash").arg("-c").arg(script).output()?;
+    let status = Command::new("bash").arg("-c").arg(script).status()?;
 
-    // Print output
-    if !output.stdout.is_empty() {
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-    }
-
-    if !output.stderr.is_empty() {
-        eprintln!(
-            "[ai-coder-agent] stderr: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
-    if !output.status.success() {
+    if !status.success() {
         eprintln!(
             "[ai-coder-agent] ⚠️  Command failed with status: {}",
-            output.status
+            status
         );
     } else {
         eprintln!("[ai-coder-agent] ✓ Command succeeded");
