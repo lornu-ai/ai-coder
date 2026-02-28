@@ -1,8 +1,8 @@
 mod agent;
 mod cli;
+mod github;
 mod ollama;
 
-use clap::Parser;
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde_json::json;
@@ -31,6 +31,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("[ai-coder] Mode: {}", mode);
     eprintln!("[ai-coder] Using model: {}", args.model);
     eprintln!("[ai-coder] Connecting to: {}", host);
+
+    // Initialize GitHub client if enabled
+    let _github_client = if args.github {
+        let key_path = args.github_app_key.unwrap_or_else(|| {
+            "/Users/aivcs/engineering/code/creds/lornu-ai-bot.2026-01-15.private-key.pem"
+                .to_string()
+        });
+
+        match github::GitHubAppAuth::from_private_key_file(args.github_app_id, &key_path) {
+            Ok(app_auth) => {
+                match app_auth
+                    .get_installation_token(&client, args.github_installation_id)
+                    .await
+                {
+                    Ok(token) => match github::GitHubClient::new(Some(token)) {
+                        Ok(gh_client) => {
+                            eprintln!("[ai-coder] GitHub integration: ENABLED (GitHub App)");
+                            eprintln!("[ai-coder] App ID: {}", args.github_app_id);
+                            eprintln!(
+                                "[ai-coder] Installation ID: {}",
+                                args.github_installation_id
+                            );
+                            Some(gh_client)
+                        }
+                        Err(e) => {
+                            eprintln!("[ai-coder] GitHub client error: {}", e);
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("[ai-coder] Failed to get installation token: {}", e);
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("[ai-coder] GitHub App auth failed: {}", e);
+                eprintln!("[ai-coder] Private key path: {}", key_path);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     eprintln!("[ai-coder] ---\n");
 
     let request_body = json!({
