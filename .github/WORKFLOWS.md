@@ -79,17 +79,19 @@ Runs on push to main/develop, PRs, and weekly on Sunday.
 
 ### Jobs:
 
-1. **Audit** - `cargo audit`
+1. **Audit** - `cargo audit` via RustSec
    - Checks for known security vulnerabilities in dependencies
-   - Fails if critical vulnerabilities found
+   - Fails if vulnerabilities found
+   - Uses [rustsec/audit-check-action](https://github.com/rustsec/audit-check-action)
 
 2. **Dependency Check** - Checks for outdated dependencies
    - Lists outdated packages
-   - Does not fail (informational)
+   - Does not fail (informational only)
 
-3. **Security Audit** - Additional security checks
-   - Uses `rustsec` audit
-   - Continues on error (informational)
+3. **Security Audit** - Weekly vulnerability scanning
+   - Same as Audit job but scheduled weekly
+   - Continues on error (informational for trending)
+   - Helps track vulnerability patterns over time
 
 ## 📊 Status Badges
 

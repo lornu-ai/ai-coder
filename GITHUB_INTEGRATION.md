@@ -52,7 +52,36 @@ pub mod errors;
 pub struct GitHubClient {
     http_client: Client,
     token: String,
-    base_url: String,
+    base_url: String,  // https://api.github.com by default
+}
+
+impl GitHubClient {
+    /// Create a new GitHub API client
+    ///
+    /// # Arguments
+    /// * `token` - GitHub personal access token or GitHub App token (optional)
+    ///   - If None, reads from GITHUB_TOKEN environment variable
+    ///   - Returns Err if no token available
+    ///
+    /// # Example
+    /// ```rust
+    /// // Using explicit token
+    /// let client = GitHubClient::new(Some("ghp_xxxxx".to_string()))?;
+    ///
+    /// // Using env var (GITHUB_TOKEN)
+    /// let client = GitHubClient::new(None)?;
+    /// ```
+    pub fn new(token: Option<String>) -> Result<Self> {
+        let token = token
+            .or_else(|| env::var("GITHUB_TOKEN").ok())
+            .ok_or(GitHubError::AuthenticationError)?;
+
+        Ok(Self {
+            http_client: Client::new(),
+            token,
+            base_url: "https://api.github.com".to_string(),
+        })
+    }
 }
 
 // src/github/models.rs
@@ -91,9 +120,17 @@ impl GitHubClient {
 #### 2.2 Post Code Review
 ```rust
 #[derive(Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum ReviewEvent {
+    Approve,
+    RequestChanges,
+    Comment,
+}
+
+#[derive(Serialize)]
 pub struct ReviewComment {
     pub body: String,
-    pub event: String,  // APPROVE, REQUEST_CHANGES, COMMENT
+    pub event: ReviewEvent,  // Type-safe enum instead of string
 }
 
 impl GitHubClient {
@@ -195,7 +232,10 @@ Extend agent mode to support GitHub operations:
 - [ ] Implement `create_commit()`
 - [ ] Implement `push_branch()`
 - [ ] Add PR creation support
-- [ ] Handle merge conflicts
+- [ ] Detect merge conflicts (report to user)
+  - _Note: Automatic merge conflict resolution is out of scope_
+  - Recommend: Detect conflict, report status, suggest manual resolution
+  - Future enhancement: Interactive conflict resolution UI
 
 ### Phase 2d: Integration (Week 4)
 - [ ] Integrate with agent mode
@@ -271,8 +311,10 @@ git checkout ...
 ```rust
 #[tokio::test]
 async fn test_get_pull_request() {
-    let client = GitHubClient::new("ghp_test_token");
-    // Mock the API response
+    // Initialize client with token (returns Result)
+    let client = GitHubClient::new(Some("ghp_test_token".to_string()))?;
+
+    // Fetch pull request
     let pr = client.get_pull_request("owner", "repo", 1).await;
     assert!(pr.is_ok());
 }

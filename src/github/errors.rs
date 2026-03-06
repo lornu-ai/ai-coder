@@ -1,24 +1,45 @@
 use std::fmt;
 
+pub type Result<T> = std::result::Result<T, GitHubError>;
+
+/// GitHub API errors
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum GitHubError {
-    InvalidInput(String),
-    AuthenticationError,
-    NotFound(String),
-    ApiError { status: u16, message: String },
+    /// Network request failed
     RequestError(String),
+    /// Invalid authentication
+    AuthenticationError,
+    /// Resource not found (404)
+    NotFound(String),
+    /// Rate limited by GitHub API
+    RateLimited { reset_at: Option<u64> },
+    /// Invalid input
+    InvalidInput(String),
+    /// JSON parsing error
+    ParseError(String),
+    /// Other GitHub API error
+    ApiError { status: u16, message: String },
 }
 
 impl fmt::Display for GitHubError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            GitHubError::RequestError(msg) => write!(f, "Request failed: {}", msg),
+            GitHubError::AuthenticationError => write!(f, "Authentication failed: invalid token"),
+            GitHubError::NotFound(resource) => write!(f, "Not found: {}", resource),
+            GitHubError::RateLimited { reset_at } => {
+                if let Some(reset) = reset_at {
+                    write!(f, "Rate limited. Reset at: {}", reset)
+                } else {
+                    write!(f, "Rate limited by GitHub API")
+                }
+            }
             GitHubError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            GitHubError::AuthenticationError => write!(f, "Authentication failed"),
-            GitHubError::NotFound(msg) => write!(f, "Not found: {}", msg),
+            GitHubError::ParseError(msg) => write!(f, "Parse error: {}", msg),
             GitHubError::ApiError { status, message } => {
                 write!(f, "GitHub API error ({}): {}", status, message)
             }
-            GitHubError::RequestError(msg) => write!(f, "Request error: {}", msg),
         }
     }
 }
@@ -31,10 +52,8 @@ impl From<reqwest::Error> for GitHubError {
     }
 }
 
-impl From<jsonwebtoken::errors::Error> for GitHubError {
-    fn from(err: jsonwebtoken::errors::Error) -> Self {
-        GitHubError::InvalidInput(format!("JWT error: {}", err))
+impl From<serde_json::Error> for GitHubError {
+    fn from(err: serde_json::Error) -> Self {
+        GitHubError::ParseError(err.to_string())
     }
 }
-
-pub type Result<T> = std::result::Result<T, GitHubError>;
