@@ -1,6 +1,6 @@
-use std::io::{self, Write};
+use std::io::{self, BufRead, BufReader, Write};
 use std::mem;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// Extract bash code blocks and execute them
 pub fn extract_and_execute_commands(
@@ -9,11 +9,9 @@ pub fn extract_and_execute_commands(
     allow_unsafe_exec: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if auto_approve && !allow_unsafe_exec {
-        eprintln!(
-            "\n[ai-coder-agent] ⚠️  WARNING: Auto-approving commands without --allow-unsafe-exec."
-        );
-        eprintln!(
-            "[ai-coder-agent] ⚠️  This is risky as model-generated commands could be harmful."
+        return Err(
+            "Refusing to auto-execute model-generated commands. Re-run with --allow-unsafe-exec to enable --yes."
+                .into(),
         );
     }
 
@@ -86,9 +84,36 @@ fn extract_commands(response: &str) -> Vec<String> {
 }
 
 /// Executes a string as a bash script.
+/// Spawns the process with piped I/O and prefixes each output line for clarity.
 pub fn execute_bash(script: &str) -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("\n[ai-coder-agent] Executing...");
-    let status = Command::new("bash").arg("-c").arg(script).status()?;
+    let mut child = Command::new("bash")
+        .arg("-c")
+        .arg(script)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
+    let stderr = child.stderr.take().ok_or("Failed to open stderr")?;
+
+    // Read and prefix stdout in real-time
+    let stdout_reader = BufReader::new(stdout);
+    for line in stdout_reader.lines() {
+        if let Ok(line) = line {
+            println!("[cmd] {}", line);
+        }
+    }
+
+    // Read and prefix stderr in real-time
+    let stderr_reader = BufReader::new(stderr);
+    for line in stderr_reader.lines() {
+        if let Ok(line) = line {
+            eprintln!("[cmd-err] {}", line);
+        }
+    }
+
+    let status = child.wait()?;
 
     if !status.success() {
         eprintln!(

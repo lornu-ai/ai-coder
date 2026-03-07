@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
 
     // 4. Stream the output word-by-word to the terminal
-    while let Some(chunk) = stream.next().await {
+    'stream_loop: while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
         buffer.extend_from_slice(&chunk);
 
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         consumed = deserializer.byte_offset();
                         if parsed.done {
-                            break;
+                            break 'stream_loop;
                         }
                     }
                     Err(e) if e.is_eof() => break,
