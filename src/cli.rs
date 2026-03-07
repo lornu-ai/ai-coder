@@ -30,4 +30,16 @@ pub struct Args {
     /// Explicitly allow unsafe auto-execution of model-generated commands (use with extreme caution)
     #[arg(long)]
     pub allow_unsafe_exec: bool,
+
+    /// Enable GitHub operations
+    #[arg(long)]
+    pub github: bool,
+
+    /// GitHub repository in 'owner/repo' format
+    #[arg(long)]
+    pub repo: Option<String>,
+
+    /// GitHub personal access token (overrides GITHUB_TOKEN env var)
+    #[arg(long)]
+    pub github_token: Option<String>,
 }
