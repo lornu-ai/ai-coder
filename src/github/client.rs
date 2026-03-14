@@ -57,11 +57,11 @@ impl GitHubClient {
 
         let file: FileContent = self.get(&url).await?;
 
-        // GitHub returns base64-encoded content
+        // GitHub returns base64-encoded content, which may contain newlines
         file.content
             .and_then(|encoded| {
                 base64::engine::general_purpose::STANDARD
-                    .decode(&encoded)
+                    .decode(encoded.replace('\n', ""))
                     .ok()
                     .and_then(|bytes| String::from_utf8(bytes).ok())
             })
